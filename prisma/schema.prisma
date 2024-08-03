@@ -1,0 +1,75 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["omitApi"]
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                     String          @id @default(cuid())
+  username               String          @unique
+  email                  String          @unique
+  password               String
+  emailVerified          Boolean         @default(false)
+  avatar                 String          @default("https://ia800305.us.archive.org/31/items/discordprofilepictures/discordblue.png")
+  createdAt              DateTime        @default(now())
+  updatedAt              DateTime        @updatedAt
+  messages               Message[]
+  servers                Server[]
+  ownedServers           Server[]        @relation(name: "ownerToServer")
+  outgoingFriendRequests User[]          @relation("UserFriendRequests")
+  incomingFriendRequest  User[]          @relation("UserFriendRequests")
+  friends                User[]          @relation("UserFriends")
+  friendedBy             User[]          @relation("UserFriends")
+  blockedUsers           User[]          @relation("BlockedUsers")
+  blockedBy              User[]          @relation("BlockedUsers")
+  online                 Boolean         @default(false)
+  status                 String          @default("Online")
+  DirectChannel          DirectChannel[]
+}
+
+model Server {
+  id        String    @id @default(cuid())
+  name      String
+  createdAt DateTime  @default(now())
+  icon      String    @default("https://static-00.iconduck.com/assets.00/discord-icon-512x511-blfje7wy.png")
+  channels  Channel[]
+  users     User[]
+  owner     User      @relation(name: "ownerToServer", fields: [ownerId], references: [id])
+  ownerId   String
+}
+
+model Channel {
+  id        String    @id @default(cuid())
+  name      String
+  createdAt DateTime  @default(now())
+  server    Server    @relation(fields: [serverId], references: [id])
+  serverId  String
+  messages  Message[]
+}
+
+model Message {
+  id              String         @id @default(cuid())
+  content         String
+  createdAt       DateTime       @default(now())
+  channelId       String?
+  channel         Channel?       @relation(fields: [channelId], references: [id])
+  userId          String
+  user            User           @relation(fields: [userId], references: [id])
+  DirectChannel   DirectChannel? @relation(fields: [directChannelId], references: [id])
+  directChannelId String?
+}
+
+model DirectChannel {
+  id        String    @id @default(cuid())
+  createdAt DateTime  @default(now())
+  icon      String    @default("https://static-00.iconduck.com/assets.00/discord-icon-512x511-blfje7wy.png")
+  users     User[]
+  messages  Message[]
+}
